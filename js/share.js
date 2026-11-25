@@ -36,7 +36,7 @@
   SH.snapshot = (S) => {
     const sideById = Object.fromEntries(S.sides.map((s) => [s.id, s]));
     const visible = S.order.map((id) => S.combatants.find((c) => c.id === id)).filter((c) => c && !c.benched && !c.hidden);
-    const eff = (e) => ({ id: e.id, name: e.name, kind: e.kind, rounds: e.rounds, card: !!e.card, pos: e.pos || null });
+    const eff = (e) => Object.assign({ id: e.id, name: e.name, kind: e.kind, rounds: e.rounds, card: !!e.card, pos: e.pos || null }, e.layers > 1 ? { layers: e.layers } : {});
     const list = visible.map((c) => {
       const sd = sideById[c.side] || S.sides[0];
       const mode = c.hpMode || sd.hp || 'bar';

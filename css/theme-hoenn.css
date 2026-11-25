@@ -1,0 +1,67 @@
+/* 豐緣地區（紅寶石／藍寶石／綠寶石）的印象色：海、沙灘、珊瑚、陽光。
+   ‧ 底色是沙灘的米色，加一層很淡的海浪點點；
+   ‧ 上方工具列與底部回合列是深海藍，下緣一條浪花色；
+   ‧ 面板保留第三代選單視窗的感覺：奶油色底、深色粗框、淡藍內框；
+   ‧ 強調色：珊瑚紅（危險、結束本輪）、陽光黃（輪到誰）、葉綠（行動了）。
+   只做淺色。放在其他 CSS 最後，用來覆蓋變數與共用元件。 */
+:root {
+  color-scheme: light;
+  --bg: #efe6d0; --bg2: #e6dabd; --panel: #fffbf0; --panel2: #f7efdb; --ink: #26313b; --muted: #6d6a5d;
+  --line: #d6c9a6; --edge: #2f3d4a; --frame: #2f3d4a; --frame2: #a6cbd8;
+  --sea: #1d5671; --sea2: #2a7a94; --sea3: #dcEFF3; --foam: #9fd6dc;
+  --navy: #1d5671; --navy2: #2a7a94; --primary: #2a7a94; --primary2: #1d5671;
+  --accent: #dd5a45; --coral2: #f07a63; --gold: #f5c242; --gold2: #fff2c2; --sun: #f5c242;
+  --good: #3f9a5c; --leaf: #4fa865; --warn: #b36b0c;
+  --hp-hi: #4cc85a; --hp-mid: #f2c531; --hp-lo: #f0563a;
+  --shadow: 3px 3px 0 rgba(29,52,70,.2);
+  --dock-h: 74px;
+}
+html { background: var(--bg); }
+body {
+  font-family: "Noto Sans TC", "Microsoft JhengHei", system-ui, sans-serif; letter-spacing: .01em; color: var(--ink);
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(rgba(29,86,113,.075) 1.3px, transparent 1.6px),
+    linear-gradient(180deg, #f4ecd9 0%, var(--bg) 40%, var(--bg2) 100%);
+  background-size: 22px 22px, 100% 100%; background-attachment: fixed;
+}
+a { color: var(--sea2); }
+::selection { background: var(--foam); }
+
+/* 面板：奶油色底、深色粗框、淡藍內框（第三代選單視窗） */
+.panel { background: var(--panel); border: 3px solid var(--frame); border-radius: 10px;
+  box-shadow: inset 0 0 0 3px var(--panel), inset 0 0 0 5px var(--frame2), var(--shadow); }
+.panel > .ptitle { margin: -12px -14px 12px; padding: 6px 16px; font-size: 15px; color: #fff; background: var(--sea);
+  border-bottom: 3px solid var(--frame); text-shadow: 1px 1px 0 #0d3346; }
+
+/* 按鈕：奶油底、深色框、下方一條實心陰影；指到時變淡黃（像選單游標） */
+button { color: var(--ink); background: #fffdf5; border: 2px solid var(--frame); border-radius: 7px; box-shadow: 0 3px 0 var(--frame); font-weight: 700; padding: 5px 12px; }
+button:hover:not(:disabled) { background: var(--gold2); border-color: var(--frame); }
+button:active:not(:disabled) { transform: translateY(3px); box-shadow: none; }
+button:focus-visible, [role="button"]:focus-visible, select:focus-visible, input:focus-visible { outline: 3px solid var(--sun); outline-offset: 2px; }
+button.primary, .gbtn { color: #fff; background: var(--sea2); border-color: var(--frame); text-shadow: 1px 1px 0 #0d3346; }
+button.primary:hover:not(:disabled), .gbtn:hover:not(:disabled) { background: #3590ab; border-color: var(--frame); }
+button.danger { color: #fff; background: var(--accent); border-color: var(--frame); text-shadow: 1px 1px 0 #7a1a14; }
+button.danger:hover:not(:disabled) { background: var(--coral2); border-color: var(--frame); }
+button.big { font-size: 16px; padding: 8px 20px; }
+.danger2 { color: #b8392a !important; }
+.clear { font-weight: 600; box-shadow: 0 2px 0 var(--frame); }
+
+input, select, textarea { background: #fff; border: 2px solid #b9ae8e; border-radius: 6px; color: var(--ink); }
+input:focus, select:focus, textarea:focus { border-color: var(--sea2); box-shadow: 0 0 0 2px #bfe3ea; outline: none; }
+
+.type, .tag { border: 1.5px solid rgba(0,0,0,.35); text-shadow: 0 0 2px rgba(0,0,0,.55); border-radius: 5px; line-height: 1.55; }
+
+/* 視窗與提示 */
+.pkio-back { background: rgba(16,40,56,.55); backdrop-filter: blur(1.5px); }
+.pkio { background: var(--panel); border: 3px solid var(--frame); border-radius: 10px; box-shadow: inset 0 0 0 3px var(--panel), inset 0 0 0 5px var(--frame2), 6px 6px 0 rgba(0,0,0,.28); }
+#toast { bottom: calc(var(--dock-h) + 16px); background: var(--panel); color: var(--ink); border: 3px solid var(--frame); border-radius: 8px; box-shadow: inset 0 0 0 2px var(--frame2), 4px 4px 0 rgba(29,52,70,.3); font-weight: 700; z-index: 130; }
+.tabs { border-bottom: 3px solid var(--frame); } .tab { border-radius: 7px 7px 0 0; box-shadow: none; } .tab.on { background: var(--sea); color: #fff; }
+.pkio-msg { color: var(--sea2); } .pkio-msg.bad { color: #b8392a; }
+
+/* 規則站角色卡編輯畫面（pkcore）的配色也跟著走 */
+.dhero { border-radius: 8px; border-color: var(--frame); }
+.gm { background: var(--panel2); border-color: var(--line); border-radius: 7px; }
+.pips i.b { background: var(--sea2); }
+.dsec h3 { background: var(--sea); }
+#gsheet, .genbox { border-color: var(--frame); border-radius: 10px; }

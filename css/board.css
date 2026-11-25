@@ -1,53 +1,83 @@
-/* 戰場圖：白底，中間左綠右紅的戰鬥區。座標都是百分比，元素以中心點定位。 */
-.boardwrap { margin-top: 8px; }
-.boardscroll { overflow-x: auto; padding-bottom: 4px; }
-.board { position: relative; min-width: 900px; aspect-ratio: 2.1 / 1; background: #fff; color: #1c2a44; border: 3px solid #4a6a99; border-radius: 16px; overflow: hidden; user-select: none; }
-.board .combat { position: absolute; left: 17%; top: 20%; width: 66%; height: 76%; border-radius: 18px; overflow: hidden; border: 3px solid #fff; box-shadow: 0 0 0 2px #cfd8e6; }
+/* 戰場圖：白底，中間左綠右紅的戰鬥區（顏色跟著設定裡的側顏色：--g、--r）。座標都是百分比，元素以中心點定位。 */
+.boardwrap { margin-top: 2px; }
+.boardscroll { overflow-x: auto; padding-bottom: 4px; scrollbar-width: thin; }
+.board { --g: #4fa865; --r: #dd5a45; position: relative; min-width: 760px; aspect-ratio: 2.1 / 1; color: #1c2a44; user-select: none; overflow: hidden;
+  background: #fffdf8; background-image: radial-gradient(rgba(29,86,113,.06) 1px, transparent 1.3px); background-size: 16px 16px;
+  border: 3px solid var(--frame, #2f3d4a); border-radius: 10px; box-shadow: inset 0 0 0 3px #fff, inset 0 0 0 5px var(--frame2, #a6cbd8); }
+.board .combat { position: absolute; left: 17%; top: 20%; width: 66%; height: 76%; border-radius: 12px; overflow: hidden; border: 3px solid var(--frame, #2f3d4a); }
 .board .half { position: absolute; top: 0; bottom: 0; width: 50%; }
-.board .half.g { left: 0; background: #5bb85b; } .board .half.r { right: 0; background: #e2402c; }
-.board .goal { position: absolute; top: 36%; height: 28%; width: 5%; border: 3px solid rgba(255,255,255,.75); }
+.board .half.g { left: 0; background: var(--g); background-image: repeating-linear-gradient(90deg, rgba(255,255,255,.07) 0 22px, transparent 22px 44px); }
+.board .half.r { right: 0; background: var(--r); background-image: repeating-linear-gradient(90deg, rgba(255,255,255,.07) 0 22px, transparent 22px 44px); }
+.board .goal { position: absolute; top: 36%; height: 28%; width: 5%; border: 3px solid rgba(255,255,255,.7); }
 .board .goal.l { left: 0; border-left: 0; } .board .goal.r { right: 0; border-right: 0; }
-.board .ball0 { position: absolute; left: 50%; top: 58%; width: 11%; aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 50%; border: 3px solid rgba(255,255,255,.8); }
-.board .ball0::after { content: ''; position: absolute; left: 50%; top: 50%; width: 30%; aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 50%; border: 3px solid rgba(255,255,255,.8); }
-.board .zname { position: absolute; bottom: 3%; font-weight: 800; font-size: 15px; color: rgba(255,255,255,.9); text-shadow: 0 1px 0 rgba(0,0,0,.3); }
-.board .zname.g { left: 14%; } .board .zname.r { right: 14%; }
-.board .wname { position: absolute; left: 1.5%; top: 2.5%; font-size: 12.5px; color: #8793a5; }
-.board .loc { position: absolute; right: 2%; bottom: 1.5%; font-size: 12.5px; color: #5a6d88; max-width: 30%; text-align: right; }
+.board .ball0 { position: absolute; left: 50%; top: 58%; width: 11%; aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 50%; border: 3px solid rgba(255,255,255,.7); }
+.board .ball0::after { content: ''; position: absolute; left: 50%; top: 50%; width: 30%; aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 50%; border: 3px solid rgba(255,255,255,.7); }
+.board .combat::after { content: ''; position: absolute; left: 50%; top: 0; bottom: 0; width: 3px; margin-left: -1.5px; background: rgba(255,255,255,.7); }
+.board .zname { position: absolute; bottom: 2.5%; font-weight: 800; font-size: 14px; letter-spacing: 2px; color: rgba(255,255,255,.92); text-shadow: 1px 1px 0 rgba(0,0,0,.3); }
+.board .zname.g { left: 3%; } .board .zname.r { right: 3%; }
+.board .wname { position: absolute; left: 1.5%; top: 2.5%; font-size: 12px; font-weight: 700; color: #8a93a2; }
+.board .loc { position: absolute; right: 1.5%; top: 2.5%; font-size: 12px; font-weight: 700; color: #50657e; max-width: 26%; text-align: right; }
+.board.dragging .combat { box-shadow: 0 0 0 3px var(--sun, #f5c242); }
 
-/* 固定格子 */
-.board .slot2 { position: absolute; z-index: 2; padding: 2px 5px 4px; background: rgba(255,255,255,.94); border: 2px dashed #9fb0c8; border-radius: 9px; display: flex; flex-direction: column; justify-content: center; gap: 1px; min-width: 0; }
-.board .slot2.full { border-style: solid; border-color: #3a76d6; }
-.board .slot2.expired { border-color: #d2403a; background: #fde9e7; }
-.board .slot2 small { font-size: 11px; color: #5a6d88; line-height: 1.1; }
-.board .srow2 { display: flex; gap: 3px; min-width: 0; }
-.board .srow2 select { flex: 1; min-width: 0; padding: 1px 2px; font-size: 13px; border-width: 1px; }
-.board .srow2 input { width: 40px; padding: 1px 2px; font-size: 13px; border-width: 1px; text-align: center; }
-.board .sview { font-size: 13px; line-height: 1.25; } .board .sview span { display: block; font-size: 11.5px; color: #5a6d88; } .board .sview.none { color: #a6b2c3; }
+/* 固定格子：格子上緣對齊（往下長）。空的是淡淡的「＋天氣」；有東西時是一個小框，每個條目一行。
+   格子不是 button，按下去不會移動位置（之前 button:active 的 transform 會把它推走，點擊就落空）。 */
+.board .slot3 { position: absolute; transform: translateX(-50%); z-index: 3; font-size: 12.5px; user-select: none; }
+.board .slot3.empty { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; padding: 2px 10px; color: #7d8898; background: rgba(255,255,255,.75); border: 2px dashed #b4bfcc; border-radius: 99px; font-weight: 700; font-size: 12px; cursor: pointer; }
+.board .slot3.empty:hover, .board .slot3.empty:focus-visible { color: var(--sea, #1d5671); border-color: var(--sea2, #2a7a94); background: #fff; }
+.board .half ~ .slot3.empty, .board .slot3.empty[data-slot^="ff"], .board .slot3.empty[data-slot^="hz"] { background: rgba(255,255,255,.6); color: #4f5b6a; border-color: rgba(255,255,255,.95); }
+.board .slot3 .si { font-size: 13px; line-height: 1; }
+.board .slot3.full { min-width: 108px; padding: 2px 4px 4px; background: #fffbf0; border: 2px solid var(--frame, #2f3d4a); border-radius: 7px; box-shadow: 0 3px 0 rgba(29,52,70,.35); }
+.board .slot3.full.click { cursor: pointer; } .board .slot3.full.click:hover { box-shadow: 0 0 0 3px var(--sun, #f5c242), 0 3px 0 rgba(29,52,70,.35); }
+.board .slot3 .sh { display: flex; align-items: center; gap: 4px; padding: 0 2px 2px; border-bottom: 1.5px dashed #d6c9a6; margin-bottom: 2px; }
+.board .slot3 .sh small { font-size: 10.5px; font-weight: 800; color: #6d7a8a; letter-spacing: 1px; flex: 1; }
+.board .slot3 .sadd { font-weight: 900; color: var(--sea2, #2a7a94); }
+.board .slot3 .sitem { display: flex; align-items: center; gap: 4px; padding: 1px 2px; border-radius: 4px; }
+.board .slot3 .sitem + .sitem { margin-top: 1px; }
+.board .slot3 .sitem b { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.board .slot3 .sitem.expired { background: #fbe0da; }
+.board .slot3 .sr { flex: none; font-size: 10.5px; font-weight: 800; color: #fff; background: var(--sea2, #2a7a94); border-radius: 4px; padding: 0 4px; white-space: nowrap; }
+.board .slot3 .sitem.expired .sr { background: #b8392a; }
+.board .cb { display: inline-flex; gap: 2px; flex: none; }
+.board .cb button, .board .card button { width: 20px; height: 20px; padding: 0; font-size: 12px; line-height: 1; border-radius: 5px; box-shadow: none; border-width: 1.5px; }
+.board .slot3 .cb button { width: 18px; height: 18px; font-size: 11px; }
+.board .cb button:active:not(:disabled), .board .card button:active:not(:disabled) { transform: none; }
+.board .cx { color: #b8392a; }
 
 /* 條目卡 */
-.board .card { position: absolute; transform: translate(-50%, -50%); z-index: 4; display: flex; align-items: center; gap: 5px; padding: 2px 8px; max-width: 240px; background: #fffdf0; border: 2px solid #3a76d6; border-radius: 9px; font-size: 13px; box-shadow: 0 2px 0 rgba(33,59,102,.25); white-space: nowrap; }
-.board .card b { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; } .board .card small { color: #5a6d88; flex: none; }
-.board .card.expired { background: #fde9e7; border-color: #d2403a !important; }
-.board .card .cb { display: inline-flex; gap: 2px; } .board .card button { padding: 0 5px; font-size: 12px; line-height: 1.4; border-radius: 6px; box-shadow: none; }
-.board .card .cx { color: #d2403a; }
-.board.ed .dragable { cursor: grab; touch-action: none; } .board .dragable.drag { cursor: grabbing; z-index: 20; opacity: .9; }
+.board .card { position: absolute; transform: translate(-50%, -50%); z-index: 4; display: flex; align-items: center; gap: 5px; padding: 2px 5px 2px 8px; max-width: 16.5%; flex-wrap: wrap; justify-content: center; white-space: normal; line-height: 1.3; font-size: 12.5px;
+  padding-left: 13px; background: linear-gradient(90deg, var(--side, #8f9aab) 0 7px, var(--frame, #2f3d4a) 7px 9px, #fff7d6 9px); border: 2px solid var(--frame, #2f3d4a); border-radius: 7px; box-shadow: 0 3px 0 rgba(29,52,70,.35); }
+.board .card b { flex: 0 1 auto; min-width: 0; overflow-wrap: anywhere; } .board .card small { color: #6d7a8a; flex: none; font-weight: 700; }
+.board .card.expired { background: linear-gradient(90deg, var(--side, #8f9aab) 0 7px, var(--frame, #2f3d4a) 7px 9px, #fbe0da 9px); }
+.board.ed .dragable { cursor: grab; touch-action: none; } .board .dragable.drag { cursor: grabbing; z-index: 20; opacity: .92; }
 
-/* 棋子 */
-.board .tok { position: absolute; transform: translate(-50%, -50%); z-index: 5; width: 84px; display: flex; flex-direction: column; align-items: center; text-align: center; }
-.board .tok.flow, .strip .tok { position: relative; transform: none; left: auto; top: auto; }
-.board .tok .ball { position: relative; width: 58px; height: 58px; border-radius: 50%; border: 4px solid #888; background: #f2f6fb; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 0 rgba(0,0,0,.25); }
-.board .tok .ball img { width: 52px; height: 52px; image-rendering: pixelated; pointer-events: none; } .board .tok .ph { font-size: 28px; }
-.board .tok .tn { max-width: 84px; font-size: 12.5px; font-weight: 700; line-height: 1.2; color: #1c2a44; background: rgba(255,255,255,.85); border-radius: 6px; padding: 0 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 1px; }
-.board .tok .thp { width: 54px; height: 6px; margin-top: 2px; border-radius: 99px; background: rgba(0,0,0,.25); border: 1px solid rgba(0,0,0,.35); overflow: hidden; } .board .tok .thp i { display: block; height: 100%; }
-.board .tok .sbadge { position: absolute; right: -8px; top: -4px; display: flex; flex-direction: column; gap: 1px; } .board .tok .sbadge i { font-style: normal; font-size: 10.5px; font-weight: 800; line-height: 1; width: 16px; height: 16px; border-radius: 50%; background: #f2b01e; color: #3a2a00; display: flex; align-items: center; justify-content: center; border: 1px solid #b87d00; }
-.board .tok .tatt { display: flex; flex-wrap: wrap; justify-content: center; gap: 2px; margin-top: 2px; } .board .tok .achip { font-size: 10.5px; padding: 0 5px; border-radius: 99px; background: #fffdf0; border: 1px solid #3a76d6; color: #1c2a44; white-space: nowrap; } .board .tok .achip.expired { border-color: #d2403a; background: #fde9e7; }
-.board .tok.cur .ball { box-shadow: 0 0 0 4px #f2b01e, 0 0 14px 4px rgba(242,176,30,.8); }
-.board .tok.down { filter: grayscale(1); opacity: .6; }
-.board .tok.hid .ball { border-style: dashed; opacity: .65; }
+/* 棋子：精靈球框（顏色＝陣營）＋名字＋血條＋行動點 */
+.boardwrap .tok { position: absolute; transform: translate(-50%, -50%); z-index: 5; width: 92px; display: flex; flex-direction: column; align-items: center; text-align: center; }
+.boardwrap .tok.flow, .strip .tok { position: relative; transform: none; left: auto; top: auto; }
+.boardwrap .tok .ball { position: relative; width: 56px; height: 56px; border-radius: 50%; border: 4px solid var(--side, #888); background: radial-gradient(circle at 50% 62%, #fff 0 56%, #e6f1f4 57%); display: flex; align-items: center; justify-content: center; box-shadow: 0 0 0 2px var(--frame, #2f3d4a), 0 3px 0 2px rgba(29,52,70,.35); }
+.boardwrap .tok .ball img { width: 52px; height: 52px; image-rendering: pixelated; pointer-events: none; } .boardwrap .tok .ph { font-size: 26px; }
+.boardwrap .tok .tn { max-width: 92px; margin-top: 4px; padding: 0 5px; font-size: 12px; font-weight: 800; line-height: 1.35; color: #1c2a44; background: #fffbf0; border: 2px solid var(--frame, #2f3d4a); border-radius: 5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.boardwrap .tok .tbar { display: flex; align-items: center; gap: 3px; margin-top: 2px; padding: 1px 3px; border-radius: 5px; background: rgba(255,255,255,.88); }
+.board.ed .tok .tbar { cursor: pointer; } .board.ed .tok .tbar:hover { background: var(--gold2, #fff2c2); box-shadow: 0 0 0 2px var(--sun, #f5c242); }
+.boardwrap .tok .thp { width: 46px; height: 8px; border-radius: 3px; background: #566068; border: 1.5px solid var(--frame, #2f3d4a); overflow: hidden; }
+.boardwrap .tok .thp i { display: block; height: 100%; transition: width .35s; }
+.boardwrap .tok .hpt { font-size: 10.5px; font-weight: 800; color: #1c2a44; font-variant-numeric: tabular-nums; }
+.boardwrap .tok .tdots { display: flex; gap: 2px; margin-top: 2px; } .boardwrap .tok .tdots i { width: 7px; height: 7px; border-radius: 50%; background: rgba(255,255,255,.8); border: 1px solid #8a93a2; }
+.boardwrap .tok .tdots i.on { background: var(--sea2, #2a7a94); border-color: var(--frame, #2f3d4a); } .boardwrap .tok .tdots b { font-size: 10px; color: #fff; text-shadow: 0 0 2px #000; }
+.boardwrap .tok .sbadge { position: absolute; right: -10px; top: -6px; display: flex; flex-direction: column; gap: 1px; }
+.boardwrap .tok .sbadge i { font-style: normal; font-size: 10px; font-weight: 800; line-height: 1; width: 17px; height: 17px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 1.5px solid var(--frame, #2f3d4a); }
+.boardwrap .tok .tdown { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%) rotate(-12deg); font-size: 11px; font-weight: 900; color: #fff; background: #b8392a; border: 2px solid var(--frame, #2f3d4a); border-radius: 4px; padding: 0 4px; white-space: nowrap; filter: none; }
+.boardwrap .tok .tatt { display: flex; flex-wrap: wrap; justify-content: center; gap: 2px; margin-top: 2px; } .boardwrap .tok .achip { font-size: 10px; font-weight: 700; padding: 0 5px; border-radius: 4px; background: #fff7d6; border: 1.5px solid var(--frame, #2f3d4a); color: #1c2a44; white-space: nowrap; } .boardwrap .tok .achip.expired { background: #fbe0da; }
+.boardwrap .tok .tcur { position: absolute; top: -20px; left: 50%; transform: translateX(-50%); font-size: 15px; color: var(--sun, #f5c242); text-shadow: 0 0 0 #000, 1px 1px 0 var(--frame, #2f3d4a), -1px -1px 0 var(--frame, #2f3d4a), 1px -1px 0 var(--frame, #2f3d4a), -1px 1px 0 var(--frame, #2f3d4a); animation: tk-bob 1s ease-in-out infinite; }
+@keyframes tk-bob { 50% { transform: translate(-50%, -4px); } }
+.boardwrap .tok.cur .ball { box-shadow: 0 0 0 2px var(--frame, #2f3d4a), 0 0 0 6px var(--sun, #f5c242), 0 0 16px 6px rgba(245,194,66,.7); }
+.boardwrap .tok.sel .ball::after { content: ''; position: absolute; inset: -11px; border: 2.5px dashed var(--sea2, #2a7a94); border-radius: 50%; animation: tk-spin 8s linear infinite; }
+@keyframes tk-spin { to { transform: rotate(360deg); } }
+.boardwrap .tok.dropon .ball { box-shadow: 0 0 0 2px var(--frame, #2f3d4a), 0 0 0 7px #ff7a5c; }
+.boardwrap .tok.down .ball img, .boardwrap .tok.down .ph { filter: grayscale(1); opacity: .55; } .boardwrap .tok.down .tn { text-decoration: line-through; opacity: .7; }
+.boardwrap .tok.hid .ball { border-style: dashed; opacity: .7; }
 
 /* 額外的側 */
 .strips { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
-.strip { position: relative; display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-start; min-height: 96px; padding: 24px 10px 8px; border: 3px dashed; border-radius: 12px; background: var(--panel2); }
-.strip .sname { position: absolute; left: 8px; top: -2px; padding: 0 10px; border-radius: 0 0 8px 8px; color: #fff; font-weight: 700; font-size: 13px; text-shadow: 0 1px 0 rgba(0,0,0,.4); }
-.strip .tok .tn { background: var(--panel); color: var(--ink); } .strip .tok { z-index: 1; }
-.boardhint { margin: 6px 2px 0; }
+.strip { position: relative; display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-start; min-height: 110px; padding: 28px 10px 8px; border: 3px dashed; border-radius: 10px; background: #fffdf8; }
+.strip .sname { position: absolute; left: 8px; top: -2px; padding: 0 10px; border-radius: 0 0 6px 6px; color: #fff; font-weight: 700; font-size: 13px; text-shadow: 0 1px 0 rgba(0,0,0,.4); }
+.strip .tok { z-index: 1; }

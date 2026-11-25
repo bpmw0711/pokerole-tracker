@@ -1,11 +1,19 @@
-/* 玩家看板（唯讀） */
-.orow.ro { grid-template-columns: 26px minmax(180px, 1.2fr) 170px minmax(120px, 1fr) 150px; }
-.ptrro { font-size: 18px; color: #b87d00; text-align: center; }
-.abox.ro { display: inline-flex; align-items: center; justify-content: center; border: 2px solid var(--edge); background: var(--panel); color: var(--ink); }
-.abox.ro.on { background: var(--primary2); color: #fff; border-color: #1c4690; }
-.vround { gap: 18px; font-size: 15px; } .vround .rd { font-size: 24px; }
-.hpn b { font-size: 15px; }
-@media (max-width: 900px) {
-  .orow.ro { grid-template-columns: 22px 1fr; }
-  .orow.ro > .hpc, .orow.ro > .stc, .orow.ro > .acts { grid-column: 1 / -1; }
-}
+/* 玩家看板（唯讀）：沿用記錄板的元件，只是沒有右邊抽屜與底部回合列 */
+#app { padding-bottom: 28px; }
+.tk-vround { display: flex; align-items: center; gap: 12px; margin-left: auto; flex-wrap: wrap; }
+.tk-vrd { display: inline-flex; align-items: baseline; gap: 3px; font-weight: 800; } .tk-vrd b { font-size: 26px; text-shadow: 2px 2px 0 #0d3346; } .tk-vrd small { opacity: .85; }
+.tk-vtime { opacity: .75; font-size: 12px; }
+.tk-vmain { display: flex; flex-direction: column; gap: 12px; max-width: 1680px; margin: 0 auto; padding: 0 16px; }
+.tk-vmain .tk-stage { margin: 0; }
+.tk-chip.ro { cursor: default; } .tk-chip.ro:hover { transform: none; }
+.tk-cbar.q { background: repeating-linear-gradient(45deg, #c9bda0 0 4px, #e6dcc2 4px 8px); }
+.tk-lcard.ro { cursor: default; align-items: flex-start; } .tk-lcard.ro:hover { border-color: var(--line); }
+.tk-vown { margin-left: 6px; font-size: 11.5px; color: var(--muted); font-weight: 500; }
+.tk-vnohp { color: var(--muted); font-size: 12px; }
+.tk-vtags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px; }
+.tk-vst { display: inline-flex; align-items: center; gap: 3px; font-size: 12px; font-weight: 700; padding: 0 6px 0 1px; background: #fff1d4; border: 1.5px solid #e0b260; border-radius: 99px; }
+.tk-vmod { font-size: 12px; font-weight: 700; padding: 0 6px; border-radius: 5px; } .tk-vmod.up { background: #e2f4e6; color: var(--good); } .tk-vmod.dn { background: #fbe4df; color: #b8392a; }
+.tk-vfail { padding: 20px; font-size: 15px; }
+.tk-rbanner.sm b { font-size: 22px; letter-spacing: 2px; }
+@media (max-width: 940px) { .tk-vmain { padding: 0 8px; } }
+.tk-vmain .board { max-width: 1240px; margin: 0 auto; }

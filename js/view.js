@@ -1,9 +1,9 @@
 // 玩家看板（唯讀）：用連結 view.html#<id> 開啟，即時顯示 GM 分享的戰場狀態。
-// 只讀 trackers/{id}/view（GM 過濾後的快照），不需登入。
+// 只讀 trackers/{id}/view（GM 過濾後的快照），不需登入。版面和 GM 的記錄板一致：上方行動順序、中間戰場圖、下面每位的狀態。
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { getDatabase, ref, onValue } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js';
 
-const F = window.PKF, DB = window.PKDB;
+const F = window.PKF, BD = window.PKBoard;
 const SPR = 'https://bpmw0711.github.io/pokerole3.0-zh-TW/assets/spr/';
 const CFG = {
   apiKey: 'AIzaSyC5za4VacV_u0GWw5nKczafpShNpVgnpzs', authDomain: 'pokerole-battle.firebaseapp.com',
@@ -11,19 +11,11 @@ const CFG = {
   storageBucket: 'pokerole-battle.firebasestorage.app', messagingSenderId: '1021588929953', appId: '1:1021588929953:web:92999662e3489896f91fe0',
 };
 
-function h(tag, attrs, ...kids) {
-  const el = document.createElement(tag);
-  for (const [k, v] of Object.entries(attrs || {})) {
-    if (v === undefined || v === null || v === false) continue;
-    if (k === 'style' && typeof v === 'object') Object.assign(el.style, v); else el.setAttribute(k, v === true ? '' : v);
-  }
-  for (const k of kids.flat(Infinity)) if (k !== null && k !== undefined && k !== false) el.append(k instanceof Node ? k : String(k));
-  return el;
-}
-const signed = (n) => (n > 0 ? '+' + n : String(n));
+const h = BD.h;
+const signed = (n) => (n > 0 ? '+' + n : n < 0 ? '−' + -n : '0');
 const app = document.getElementById('app');
 const id = decodeURIComponent(location.hash.replace(/^#/, '')).trim();
-let lastTime = null;
+let lastTime = null, prev = null;
 
 function statusText(st) {
   let t = F.STATUS_ZH[st.kind] || st.kind;
@@ -32,52 +24,80 @@ function statusText(st) {
   if (st.rounds != null && st.rounds !== '') t += `（${st.rounds === 0 ? '到期' : '剩 ' + st.rounds + ' 輪'}）`;
   return t;
 }
-function effChip(e) {
-  const expired = e.rounds === 0;
-  return h('span', { class: 'chip eff' + (expired ? ' expired' : '') }, h('b', {}, e.name || ''), e.rounds != null ? h('small', {}, expired ? '到期' : `剩 ${e.rounds} 輪`) : null);
-}
+const stDot = (kind) => { const c = BD.STATUS_COLOR[kind] || BD.STATUS_COLOR.custom; return h('i', { class: 'tk-sd', style: { background: c[0], color: c[1] }, title: F.STATUS_ZH[kind] || kind }, BD.SHORT[kind] || '＊'); };
+const dots = (n) => Array.from({ length: 5 }, (_, k) => h('i', { class: k < n ? 'on' : '' }));
+const hpPct = (hp) => (hp.mode === 'exact' ? Math.min(100, Math.round(hp.cur / Math.max(1, hp.max) * 100)) : hp.pct);
+const sprite = (c, size) => (c.img != null
+  ? h('img', { class: 'tk-spr ' + size, src: SPR + c.img + '.png', alt: '', onerror: (e) => { e.target.style.visibility = 'hidden'; } })
+  : h('span', { class: 'tk-spr ph ' + size }, c.trainer ? '🧑' : '？'));
+const effText = (e) => BD.effName(e) + (e.rounds != null ? (e.rounds === 0 ? '（到期）' : `（${e.rounds} 輪）`) : '');
 
 function draw(v) {
   const side = Object.fromEntries(v.sides.map((s) => [s.id, s]));
+  const sideOf = (c) => side[c.side] || { color: '#8f9aab', name: '' };
   const model = {
-    location: v.location, sides: v.sides, effects: v.effects, suggest: {}, sprBase: SPR,
+    location: v.location, sides: v.sides, effects: v.effects, sprBase: SPR,
     tokens: v.list.map((c) => {
-      const hp = c.hp || {};
-      const pct = hp.mode === 'exact' ? Math.min(100, Math.round(hp.cur / Math.max(1, hp.max) * 100)) : hp.pct;
-      return { id: c.id, name: c.name, img: c.img != null ? c.img : null, trainer: c.trainer, side: c.side, pos: c.pos || null, hp: hp.mode === 'hidden' || pct == null ? null : { pct },
+      const hp = c.hp || {}, pct = hpPct(hp);
+      return { id: c.id, name: c.name, img: c.img != null ? c.img : null, trainer: c.trainer, side: c.side, pos: c.pos || null,
+        hp: hp.mode === 'hidden' || pct == null ? null : { pct, text: hp.mode === 'exact' ? `${hp.cur}/${hp.max}` : null }, actions: c.actionCount,
         down: c.down, current: v.turn === c.id, status: c.status.map((s) => s.kind), attached: c.effects.map((e) => ({ id: e.id, name: e.name, rounds: e.rounds })) };
     }),
   };
-  const rows = v.list.map((c) => {
-    const sd = side[c.side] || { color: '#888', name: '' }, cur = v.turn === c.id;
-    const hp = c.hp || {};
-    const pct = hp.mode === 'exact' ? Math.min(100, Math.round(hp.cur / Math.max(1, hp.max) * 100)) : hp.pct;
-    const boxes = Array.from({ length: 5 }, (_, k) => h('span', { class: 'abox ro' + (k < c.actionCount ? ' on' : '') }, k + 1));
-    return h('div', { class: 'orow ro' + (cur ? ' cur' : '') + (c.down ? ' down' : ''), style: { borderLeftColor: sd.color } },
-      h('div', { class: 'ptrro' }, cur ? '▶' : ''),
-      h('div', { class: 'who' }, c.img != null ? h('img', { class: 'sprite', src: SPR + c.img + '.png', alt: '', onerror: (e) => { e.target.style.visibility = 'hidden'; } }) : h('span', { class: 'sprite ph' }, c.trainer ? '🧑' : '？'),
-        h('div', { class: 'wn' }, h('b', { class: 'nm' }, c.name), h('small', {}, h('span', { class: 'sdot', style: { background: sd.color } }), sd.name, c.owner ? '・' + c.owner : ''))),
-      h('div', { class: 'hpc' },
-        hp.mode === 'hidden' ? h('small', { class: 'muted' }, 'HP 不公開') : [
-          h('div', { class: 'bar' }, h('i', { style: { width: pct + '%', background: pct > 50 ? 'var(--hp-hi)' : pct > 25 ? 'var(--hp-mid)' : 'var(--hp-lo)' } })),
-          hp.mode === 'exact' ? h('div', { class: 'hpn' }, h('b', {}, `${hp.cur} / ${hp.max}`)) : null],
-        c.down ? h('small', { class: 'dead' }, '倒下') : null),
-      h('div', { class: 'stc' }, c.status.map((s) => h('span', { class: 'chip st-' + s.kind }, statusText(s))),
-        c.mods.map((m) => h('span', { class: 'chip mod ' + (m.v > 0 ? 'up' : 'dn') }, F.ATTR_ZH[m.stat] + signed(m.v))), c.effects.map(effChip)),
-      h('div', { class: 'acts' }, h('div', { class: 'aboxes' }, boxes, c.actionCount > 5 ? h('small', {}, '+' + (c.actionCount - 5)) : null)));
-  });
   const cur = v.list.find((c) => c.id === v.turn);
+  const chips = v.list.map((c) => {
+    const hp = c.hp || {}, p = hpPct(hp);
+    return h('div', { class: 'tk-chip ro' + (v.turn === c.id ? ' cur' : '') + (c.down ? ' down' : ''), style: { '--side': sideOf(c).color }, title: c.name },
+      v.turn === c.id ? h('span', { class: 'tk-curmark' }, '▶') : null, sprite(c, 'sm'),
+      h('span', { class: 'tk-cn' }, h('b', {}, c.name),
+        hp.mode === 'hidden' || p == null ? h('span', { class: 'tk-cbar q' }) : h('span', { class: 'tk-cbar' }, h('i', { style: { width: p + '%', background: BD.hpColor(p) } })),
+        h('span', { class: 'tk-cdots' }, dots(c.actionCount))),
+      c.status.length ? h('span', { class: 'tk-cst' }, c.status.slice(0, 3).map((s) => stDot(s.kind))) : null);
+  });
+  const fieldEff = v.effects.filter((e) => e.scope === 'field');
+  const cards = v.sides.map((sd) => {
+    const mem = v.list.filter((c) => c.side === sd.id);
+    const eff = v.effects.filter((e) => e.scope === sd.id);
+    if (!mem.length && !eff.length) return null;
+    return h('div', { class: 'tk-rgroup', style: { '--side': sd.color } },
+      h('h4', {}, sd.name, h('small', {}, `${mem.length} 位`), eff.map((e) => h('span', { class: 'tk-echip' + (e.rounds === 0 ? ' expired' : '') }, h('b', {}, effText(e))))),
+      mem.length ? h('div', { class: 'tk-rcards' }, mem.map((c) => {
+        const hp = c.hp || {}, p = hpPct(hp);
+        const tags = [...c.status.map((s) => h('span', { class: 'tk-vst' }, stDot(s.kind), statusText(s))),
+          ...c.mods.map((m) => h('span', { class: 'tk-vmod ' + (m.v > 0 ? 'up' : 'dn') }, F.ATTR_ZH[m.stat] + signed(m.v))),
+          ...c.effects.map((e) => h('span', { class: 'tk-echip' + (e.rounds === 0 ? ' expired' : '') }, h('b', {}, effText(e))))];
+        return h('div', { class: 'tk-lcard ro' + (v.turn === c.id ? ' cur' : '') + (c.down ? ' down' : '') },
+          sprite(c, 'sm'),
+          h('div', { class: 'tk-lc' }, h('b', {}, c.name, c.owner ? h('small', { class: 'tk-vown' }, c.owner) : null),
+            hp.mode === 'hidden' ? h('small', { class: 'tk-vnohp' }, 'HP 不公開') : h('div', { class: 'tk-lbar' }, h('span', { class: 'tk-cbar' }, h('i', { style: { width: p + '%', background: BD.hpColor(p) } })), hp.mode === 'exact' ? h('small', {}, `${hp.cur}/${hp.max}`) : null),
+            h('div', { class: 'tk-lmeta' }, h('span', { class: 'tk-cdots', title: `本輪已行動 ${c.actionCount} 次` }, dots(c.actionCount)), c.down ? h('span', { class: 'tk-tag bad' }, '倒下') : null),
+            tags.length ? h('div', { class: 'tk-vtags' }, tags) : null));
+      })) : null);
+  });
   app.replaceChildren(
-    h('div', { class: 'panel head' }, h('div', { class: 'hero' }, h('span', { class: 'pball' }),
-      h('div', { class: 'grow' }, h('h1', {}, v.title || '戰場看板'), h('small', {}, '玩家看板（唯讀）・GM 更新後會自動刷新'))),
-      h('div', { class: 'row vround' }, h('b', { class: 'rd' }, `第 ${v.round} 輪`), cur ? h('span', {}, '目前輪到：', h('b', {}, cur.name)) : null,
-        h('span', { class: 'grow' }), lastTime ? h('small', { class: 'muted' }, `更新於 ${lastTime}`) : null)),
-    h('div', { class: 'panel' }, h('h2', { class: 'ptitle' }, '戰場'), window.PKBoard.render(model, { editable: false })),
-    h('div', { class: 'panel' }, h('h2', { class: 'ptitle' }, '先攻順序', h('small', {}, `${v.list.length} 位`)),
-      v.list.length ? rows : h('p', { class: 'muted empty' }, '目前沒有公開的參戰者。')));
+    h('header', { class: 'tk-top' },
+      h('div', { class: 'tk-brand' }, h('span', { class: 'tk-logo', 'aria-hidden': 'true' }), h('span', {}, h('b', {}, v.title || '戰場看板'), h('small', {}, '玩家看板（唯讀）・GM 更新後自動刷新'))),
+      h('div', { class: 'tk-vround' }, h('span', { class: 'tk-vrd' }, h('small', {}, '第'), h('b', {}, v.round), h('small', {}, '輪')),
+        cur ? h('span', { class: 'tk-nowbtn', style: { '--side': sideOf(cur).color } }, sprite(cur, 'sm'), h('span', { class: 'tk-nowt' }, h('small', {}, '輪到'), h('b', {}, cur.name))) : h('span', { class: 'tk-nowbtn idle' }, '還沒開始'),
+        lastTime ? h('small', { class: 'tk-vtime' }, `更新於 ${lastTime}`) : null)),
+    h('nav', { class: 'tk-order', 'aria-label': '行動順序' }, h('span', { class: 'tk-olab' }, '行動順序'),
+      v.list.length ? h('div', { class: 'tk-chips' }, chips) : h('span', { class: 'tk-ohint' }, '目前沒有公開的參戰者。')),
+    h('div', { class: 'tk-vmain' },
+      h('section', { class: 'tk-stage panel' },
+        fieldEff.length ? h('div', { class: 'tk-shead' }, h('span', { class: 'tk-lab' }, '全場'), fieldEff.map((e) => h('span', { class: 'tk-echip' + (e.rounds === 0 ? ' expired' : '') }, h('b', {}, effText(e))))) : null,
+        BD.render(model, { editable: false })),
+      h('section', { class: 'tk-stage panel' }, h('div', { class: 'tk-roster' }, cards.filter(Boolean)))));
+  // 輪到的人換了，或新的一輪：短暫提示
+  if (prev && v.round !== prev.round) flash(`第 ${v.round} 輪`);
+  else if (prev && v.turn && v.turn !== prev.turn && cur) flash(`輪到 ${cur.name}`, true);
+  prev = { round: v.round, turn: v.turn };
+}
+function flash(text, small) {
+  const b = h('div', { class: 'tk-rbanner' + (small ? ' sm' : ''), role: 'status' }, h('b', {}, text));
+  document.body.append(b); setTimeout(() => b.remove(), 1900);
 }
 
-function fail(msg) { app.replaceChildren(h('div', { class: 'panel' }, h('h2', { class: 'ptitle' }, '玩家看板'), h('p', {}, msg))); }
+function fail(msg) { app.replaceChildren(h('header', { class: 'tk-top' }, h('div', { class: 'tk-brand' }, h('span', { class: 'tk-logo' }), h('span', {}, h('b', {}, '玩家看板')))), h('div', { class: 'tk-vmain' }, h('div', { class: 'panel tk-vfail' }, h('p', {}, msg)))); }
 
 window.PKVIEW = { draw }; // 測試用：可以直接餵快照
 if (!id) fail('這個網址沒有看板代碼。請向 GM 要完整的連結。');

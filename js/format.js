@@ -22,10 +22,12 @@
   F.clone = clone;
 
   F.defaultSides = () => [
-    { id: 's1', name: '玩家方', color: '#3b82f6', hp: 'exact' },
-    { id: 's2', name: '敵方', color: '#ef4444', hp: 'bar' },
-    { id: 's3', name: '中立', color: '#9aa3b2', hp: 'bar' },
+    { id: 's1', name: '玩家方', color: '#4fa865', hp: 'exact' },
+    { id: 's2', name: '敵方', color: '#dd5a45', hp: 'bar' },
+    { id: 's3', name: '中立', color: '#8f9aab', hp: 'bar' },
   ];
+  // 舊版的預設色（藍、紅、灰）換成戰場圖的綠、紅、灰；自己改過的顏色不動
+  const OLD_COLOR = { s1: '#3b82f6', s2: '#ef4444', s3: '#9aa3b2' };
 
   F.newSession = () => ({
     schema: F.SESSION, title: '', saved: null, round: 1,
@@ -56,6 +58,7 @@
     if (!Array.isArray(s.sides) || !s.sides.length) s.sides = F.defaultSides();
     // 戰場圖的三個區域（綠、紅、白）對應 s1、s2、s3，缺的補回去
     F.defaultSides().forEach((d0, i) => { if (!s.sides.some((x) => x.id === d0.id)) s.sides.splice(i, 0, d0); });
+    F.defaultSides().forEach((d0) => { const x = s.sides.find((y) => y.id === d0.id); if (x && (x.color || '').toLowerCase() === OLD_COLOR[d0.id]) x.color = d0.color; });
     for (const k of ['effects', 'order', 'combatants', 'log']) if (!Array.isArray(s[k])) s[k] = [];
     for (const c of s.combatants) {
       c.state = Object.assign(F.blankState(), c.state || {});
