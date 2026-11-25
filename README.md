@@ -17,7 +17,7 @@
 
 ## 開發
 - 沒有建置步驟，全部是一般 script，直接開檔案或用任何靜態伺服器。
-- `js/format.js`（格式與轉換）、`js/rules.js`（骰池、相剋、戰鬥輪結束）、`js/app.js`（GM 畫面）、`js/share.js`（Firebase 分享）、`js/view.js`（玩家看板）。
+- `js/format.js`（格式與轉換）、`js/rules.js`（骰池、相剋、戰鬥輪結束）、`js/app.js`（GM 畫面）、`js/share.js`（Firebase 分享）、`js/view.js`（玩家看板）、`js/board.js`＋`css/board.css`（戰場圖，GM 板與玩家看板共用）。
 - `js/pkcore.js` 是規則站 `site/assets/pkcore.js` 的複製品；`data/db.js` 由 `tools/build-db.mjs` 從對戰網頁的 `db.json` 產生。更新後執行 `tools/sync-pkcore.bat`。
 - Firebase：沿用 `pokerole-battle` 專案，資料放在 `trackers/{id}`，規則見 `docs/firebase-rules.json`。
 

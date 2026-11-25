@@ -39,13 +39,14 @@ function effChip(e) {
 
 function draw(v) {
   const side = Object.fromEntries(v.sides.map((s) => [s.id, s]));
-  const eff = (scope) => v.effects.filter((e) => e.scope === scope);
-  const sideBox = (sd) => {
-    const e = eff(sd.id), t = v.targets && v.targets[sd.id];
-    if (!e.length && t == null && !v.list.some((c) => c.side === sd.id)) return null;
-    return h('div', { class: 'side', style: { borderColor: sd.color } },
-      h('div', { class: 'sidehead', style: { background: sd.color } }, h('b', {}, sd.name), t != null ? h('span', { class: 'tgt' }, `目標數 ${t}`) : null),
-      h('div', { class: 'effs' }, e.length ? e.map(effChip) : h('span', { class: 'muted small' }, '—')));
+  const model = {
+    location: v.location, sides: v.sides, effects: v.effects, targets: v.targets || {}, suggest: {}, sprBase: SPR,
+    tokens: v.list.map((c) => {
+      const hp = c.hp || {};
+      const pct = hp.mode === 'exact' ? Math.min(100, Math.round(hp.cur / Math.max(1, hp.max) * 100)) : hp.pct;
+      return { id: c.id, name: c.name, img: c.img != null ? c.img : null, trainer: c.trainer, side: c.side, pos: c.pos || null, hp: hp.mode === 'hidden' || pct == null ? null : { pct },
+        down: c.down, current: v.turn === c.id, status: c.status.map((s) => s.kind), attached: c.effects.map((e) => ({ id: e.id, name: e.name, rounds: e.rounds })) };
+    }),
   };
   const rows = v.list.map((c) => {
     const sd = side[c.side] || { color: '#888', name: '' }, cur = v.turn === c.id;
@@ -69,11 +70,9 @@ function draw(v) {
   app.replaceChildren(
     h('div', { class: 'panel head' }, h('div', { class: 'hero' }, h('span', { class: 'pball' }),
       h('div', { class: 'grow' }, h('h1', {}, v.title || '戰場看板'), h('small', {}, '玩家看板（唯讀）・GM 更新後會自動刷新'))),
-      h('div', { class: 'row vround' }, h('b', { class: 'rd' }, `第 ${v.round} 輪`), cur ? h('span', {}, '目前輪到：', h('b', {}, cur.name)) : null, v.location ? h('span', { class: 'muted' }, '地點：' + v.location) : null,
+      h('div', { class: 'row vround' }, h('b', { class: 'rd' }, `第 ${v.round} 輪`), cur ? h('span', {}, '目前輪到：', h('b', {}, cur.name)) : null,
         h('span', { class: 'grow' }), lastTime ? h('small', { class: 'muted' }, `更新於 ${lastTime}`) : null)),
-    h('div', { class: 'panel' }, h('h2', { class: 'ptitle' }, '戰場'),
-      h('div', { class: 'effs' }, h('span', { class: 'lab' }, '全場'), eff('field').length ? eff('field').map(effChip) : h('span', { class: 'muted small' }, '—')),
-      h('div', { class: 'sides' }, v.sides.map(sideBox))),
+    h('div', { class: 'panel' }, h('h2', { class: 'ptitle' }, '戰場'), window.PKBoard.render(model, { editable: false })),
     h('div', { class: 'panel' }, h('h2', { class: 'ptitle' }, '先攻順序', h('small', {}, `${v.list.length} 位`)),
       v.list.length ? rows : h('p', { class: 'muted empty' }, '目前沒有公開的參戰者。')));
 }

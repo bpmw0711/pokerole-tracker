@@ -55,6 +55,8 @@
     s.field = Object.assign({}, d.field, s.field || {});
     s.field.targets = s.field.targets || {};
     if (!Array.isArray(s.sides) || !s.sides.length) s.sides = F.defaultSides();
+    // 戰場圖的三個區域（綠、紅、白）對應 s1、s2、s3，缺的補回去
+    F.defaultSides().forEach((d0, i) => { if (!s.sides.some((x) => x.id === d0.id)) s.sides.splice(i, 0, d0); });
     for (const k of ['effects', 'order', 'combatants', 'log']) if (!Array.isArray(s[k])) s[k] = [];
     for (const c of s.combatants) {
       c.state = Object.assign(F.blankState(), c.state || {});

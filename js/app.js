@@ -255,18 +255,66 @@
     return h('div', { class: 'effs' }, label ? h('span', { class: 'lab' }, label) : null,
       list.map(effChip), h('button', { class: 'mini add', type: 'button', onclick: () => openEffect(null, scope) }, '＋ 條目'));
   }
+  // ───────── 戰場圖 ─────────
+  const r1 = (n) => Math.round(n * 10) / 10;
+  function boardModel() {
+    const tokens = activeOrder().map((c) => {
+      const x = R.dex(c);
+      return {
+        id: c.id, name: cname(c), img: x ? x.img : null, trainer: R.isTrainer(c), side: c.side, pos: c.pos || null,
+        hp: { pct: Math.min(100, Math.round(Math.max(0, c.state.hp) / Math.max(1, R.maxHp(c, S.settings)) * 100)) },
+        down: R.isDown(c), current: S.turn.combatant === c.id, hidden: !!c.hidden,
+        status: c.state.status.map((s) => s.kind), attached: effectsOf(c.id).map((e) => ({ id: e.id, name: e.name, rounds: e.rounds })),
+      };
+    });
+    return { location: S.field.location, sides: S.sides, tokens, effects: S.effects, targets: S.field.targets, suggest: SUGGEST, sprBase: SPR };
+  }
+  const scopeName = (scope) => (scope === 'field' ? '全場' : (S.sides.find((s) => s.id === scope) || {}).name || (byId(scope) ? '附在 ' + cname(byId(scope)) : scope));
+  function boardOpts() {
+    const eff = (id) => S.effects.find((e) => e.id === id);
+    return {
+      editable: true,
+      onTokenMove: (id, d) => {
+        const c = byId(id), sd = S.sides.find((s) => s.id === d.side);
+        if (!c || !sd) return;
+        const changed = c.side !== d.side;
+        commit(() => { c.side = d.side; if (d.pos) c.pos = { x: r1(d.pos.x), y: r1(d.pos.y) }; else delete c.pos; }, changed ? `${cname(c)} 移到「${sd.name}」` : null);
+      },
+      onTokenClick: (id) => {
+        UI.open[id] = true; render();
+        const el = document.querySelector(`[data-cid="${id}"]`);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      },
+      onSlot: (sl, patch) => {
+        const find = () => S.effects.find((x) => !x.card && x.kind === sl.kind && x.scope === sl.scope);
+        let msg = null;
+        if (patch.name !== undefined) msg = patch.name ? `${sl.label}（${scopeName(sl.scope)}）：${patch.name}` : `${sl.label}（${scopeName(sl.scope)}）解除`;
+        commit(() => {
+          const e = find();
+          if (patch.name !== undefined) {
+            if (patch.name === '') { if (e) S.effects = S.effects.filter((x) => x !== e); }
+            else if (e) e.name = patch.name;
+            else S.effects.push({ id: F.uid('e'), kind: sl.kind, name: patch.name, scope: sl.scope, rounds: null, note: '' });
+          }
+          if (patch.rounds !== undefined && e) e.rounds = patch.rounds;
+        }, msg);
+      },
+      onCardMove: (id, d) => {
+        const e = eff(id); if (!e) return;
+        commit(() => { e.scope = d.scope; e.card = true; if (d.pos) e.pos = { x: r1(d.pos.x), y: r1(d.pos.y) }; else delete e.pos; }, `條目「${e.name}」→ ${scopeName(d.scope)}`);
+      },
+      onCardClick: (id) => { const e = eff(id); if (e) openEffect(e); },
+      onCardRounds: (id, dl) => { const e = eff(id); if (e) commit(() => { e.rounds = Math.max(0, (e.rounds || 0) + dl); }); },
+      onCardRemove: (id) => { const e = eff(id); if (e) commit(() => { S.effects = S.effects.filter((x) => x !== e); }, `移除條目：${e.name}`); },
+      onTargets: (sid, v) => commit(() => { S.field.targets[sid] = v === '' ? null : num(v); }),
+    };
+  }
   function fieldPanel() {
-    const sides = h('div', { class: 'sides' }, S.sides.map((sd) => {
-      const t = S.field.targets[sd.id];
-      return h('div', { class: 'side', style: { borderColor: sd.color } },
-        h('div', { class: 'sidehead', style: { background: sd.color } }, h('b', {}, sd.name),
-          h('label', { class: 'tgt' }, '目標數 ', h('input', { type: 'number', min: '0', value: t == null ? '' : t, onchange: (e) => commit(() => { S.field.targets[sd.id] = e.target.value === '' ? null : num(e.target.value); }) }))),
-        effBlock(sd.id, '防護力場・入場危害・掩護…'));
-    }));
     return h('div', { class: 'panel' }, h('h2', { class: 'ptitle' }, '戰場'),
       h('div', { class: 'row' }, h('label', { class: 'grow row' }, '地點 ', h('input', { class: 'grow', value: S.field.location, placeholder: '例如：常磐森林外的草原',
-        onchange: (e) => { S.field.location = e.target.value; persist(); } }))),
-      effBlock('field', '全場（天氣・場地・其他）'), sides);
+        onchange: (e) => commit(() => { S.field.location = e.target.value; }) })),
+        h('button', { class: 'primary', type: 'button', onclick: () => openEffect(null, 'field') }, '＋ 新增條目')),
+      window.PKBoard.render(boardModel(), boardOpts()));
   }
 
   function controlPanel() {
@@ -350,7 +398,7 @@
         h('button', { class: 'mark ok' + (c.state.turnMark === 'act' ? ' on' : ''), type: 'button', title: '這回合有行動', onclick: () => commit(() => { c.state.turnMark = c.state.turnMark === 'act' ? null : 'act'; }) }, '✓'),
         h('button', { class: 'mark no' + (c.state.turnMark === 'skip' ? ' on' : ''), type: 'button', title: '這回合沒有行動（保留）', onclick: () => commit(() => { c.state.turnMark = c.state.turnMark === 'skip' ? null : 'skip'; }) }, '✗'),
         h('button', { class: 'mini', type: 'button', onclick: () => { UI.open[c.id] = !UI.open[c.id]; render(); } }, UI.open[c.id] ? '收合 ▴' : '展開 ▾')));
-    const wrap = h('div', { class: 'owrap' }, el);
+    const wrap = h('div', { class: 'owrap', 'data-cid': c.id }, el);
     if (UI.open[c.id]) wrap.append(details(c));
     return wrap;
   }
@@ -533,7 +581,7 @@
   };
   function openEffect(e, scope) {
     const isNew = !e;
-    const d = e || { id: F.uid('e'), kind: scope === 'field' ? 'weather' : 'other', name: '', scope: scope || 'field', rounds: null, note: '' };
+    const d = e || { id: F.uid('e'), kind: 'other', name: '', scope: scope || 'field', rounds: null, note: '', card: true };
     const kind = h('select', {}, Object.keys(F.EFFECT_KIND_ZH).map((k) => h('option', { value: k, selected: k === d.kind }, F.EFFECT_KIND_ZH[k])));
     const dl = h('datalist', { id: 'effsug' });
     const fillDl = () => { dl.replaceChildren(...(SUGGEST[kind.value] || []).map((s) => h('option', { value: s }))); };
@@ -879,7 +927,7 @@
         const nm = h('input', { value: sd.name, onchange: (e) => commit(() => { sd.name = e.target.value.trim() || sd.name; }) });
         const col = h('input', { type: 'color', value: sd.color, onchange: (e) => commit(() => { sd.color = e.target.value; }) });
         const hp = h('select', { onchange: (e) => commit(() => { sd.hp = e.target.value; }) }, [['exact', '數字'], ['bar', '只有血條'], ['hidden', '不顯示']].map(([v, t]) => h('option', { value: v, selected: sd.hp === v }, t)));
-        const del = h('button', { class: 'clear danger2', type: 'button', disabled: S.sides.length <= 1, onclick: () => {
+        const del = h('button', { class: 'clear danger2', type: 'button', disabled: window.PKBoard.MAIN.includes(sd.id), title: window.PKBoard.MAIN.includes(sd.id) ? '戰場圖上的三個區域（綠、紅、白）不能刪除，可以改名改色' : '', onclick: () => {
           const mem = S.combatants.filter((c) => c.side === sd.id);
           if (!confirm(`刪除「${sd.name}」？` + (mem.length ? `裡面 ${mem.length} 位參戰者會移到「${S.sides.find((x) => x !== sd).name}」。` : ''))) return;
           commit(() => {
@@ -893,7 +941,7 @@
       });
       body.replaceChildren(
         h('h4', {}, '側（陣營）'),
-        h('p', { class: 'muted small' }, '預設有玩家方、敵方、中立。可以自己增減，例如多一個「第三勢力」。入場危害、防護力場等條目掛在「側」上。'),
+        h('p', { class: 'muted small' }, '戰場圖有三個固定區域：綠（玩家方）、紅（敵方）、白（中立／全場），可以改名改色但不能刪。再新增的側會在戰場圖下面多一條，棋子拖進去就換成那一側。'),
         sideRows,
         h('div', { class: 'row' }, h('button', { type: 'button', onclick: () => { commit(() => { S.sides.push({ id: F.uid('s'), name: '新的一側', color: '#f59e0b', hp: 'bar' }); }); draw(); } }, '＋ 新增一側')),
         h('h4', {}, '規則（影響最大 HP、防禦與特防的計算）'),

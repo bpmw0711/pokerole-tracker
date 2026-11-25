@@ -36,13 +36,13 @@
   SH.snapshot = (S) => {
     const sideById = Object.fromEntries(S.sides.map((s) => [s.id, s]));
     const visible = S.order.map((id) => S.combatants.find((c) => c.id === id)).filter((c) => c && !c.benched && !c.hidden);
-    const eff = (e) => ({ name: e.name, kind: e.kind, rounds: e.rounds });
+    const eff = (e) => ({ id: e.id, name: e.name, kind: e.kind, rounds: e.rounds, card: !!e.card, pos: e.pos || null });
     const list = visible.map((c) => {
       const sd = sideById[c.side] || S.sides[0];
       const mode = c.hpMode || sd.hp || 'bar';
       const max = Math.max(1, R.maxHp(c, S.settings)), cur = Math.max(0, c.state.hp);
       const o = {
-        id: c.id, name: c.character.name || F.charName(root.PKDB, c.character), side: c.side, owner: c.owner || '',
+        id: c.id, name: c.character.name || F.charName(root.PKDB, c.character), side: c.side, owner: c.owner || '', pos: c.pos || null,
         trainer: c.character.kind === 'trainer', down: R.isDown(c),
         status: c.state.status.map((st) => ({ kind: st.kind, level: st.level, rounds: st.rounds, note: st.kind === 'custom' ? st.note : '' })),
         mods: F.STAT_KEYS.filter((k) => c.state.mods[k]).map((k) => ({ stat: k, v: c.state.mods[k] })),
