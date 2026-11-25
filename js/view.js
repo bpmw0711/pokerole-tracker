@@ -40,7 +40,7 @@ function effChip(e) {
 function draw(v) {
   const side = Object.fromEntries(v.sides.map((s) => [s.id, s]));
   const model = {
-    location: v.location, sides: v.sides, effects: v.effects, targets: v.targets || {}, suggest: {}, sprBase: SPR,
+    location: v.location, sides: v.sides, effects: v.effects, suggest: {}, sprBase: SPR,
     tokens: v.list.map((c) => {
       const hp = c.hp || {};
       const pct = hp.mode === 'exact' ? Math.min(100, Math.round(hp.cur / Math.max(1, hp.max) * 100)) : hp.pct;

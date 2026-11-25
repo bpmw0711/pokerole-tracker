@@ -267,7 +267,7 @@
         status: c.state.status.map((s) => s.kind), attached: effectsOf(c.id).map((e) => ({ id: e.id, name: e.name, rounds: e.rounds })),
       };
     });
-    return { location: S.field.location, sides: S.sides, tokens, effects: S.effects, targets: S.field.targets, suggest: SUGGEST, sprBase: SPR };
+    return { location: S.field.location, sides: S.sides, tokens, effects: S.effects, suggest: SUGGEST, sprBase: SPR };
   }
   const scopeName = (scope) => (scope === 'field' ? '全場' : (S.sides.find((s) => s.id === scope) || {}).name || (byId(scope) ? '附在 ' + cname(byId(scope)) : scope));
   function boardOpts() {
@@ -306,7 +306,6 @@
       onCardClick: (id) => { const e = eff(id); if (e) openEffect(e); },
       onCardRounds: (id, dl) => { const e = eff(id); if (e) commit(() => { e.rounds = Math.max(0, (e.rounds || 0) + dl); }); },
       onCardRemove: (id) => { const e = eff(id); if (e) commit(() => { S.effects = S.effects.filter((x) => x !== e); }, `移除條目：${e.name}`); },
-      onTargets: (sid, v) => commit(() => { S.field.targets[sid] = v === '' ? null : num(v); }),
     };
   }
   function fieldPanel() {
@@ -373,7 +372,7 @@
         h('small', {}, h('span', { class: 'sdot', style: { background: sd.color } }), sd.name, c.owner ? '・' + c.owner : '', R.isTrainer(c) ? '・訓練家' : ''),
         h('span', { class: 'tys' }, R.types(c).map(typeChip))));
     const el = h('div', { class: 'orow' + (cur ? ' cur' : '') + (down ? ' down' : '') + (c.hidden ? ' hid' : ''), style: { borderLeftColor: sd.color } },
-      h('div', { class: 'mv' }, h('button', { class: 'mini', type: 'button', disabled: i === 0, 'aria-label': '上移', onclick: () => move(c, -1) }, '▲'),
+      h('div', { class: 'reorder' }, h('button', { class: 'mini', type: 'button', disabled: i === 0, 'aria-label': '上移', onclick: () => move(c, -1) }, '▲'),
         h('button', { class: 'mini', type: 'button', disabled: i === n - 1, 'aria-label': '下移', onclick: () => move(c, 1) }, '▼')),
       h('div', { class: 'init' },
         h('label', {}, '先攻', h('input', { type: 'number', value: c.state.init.roll == null ? '' : c.state.init.roll, onchange: (e) => commit(() => { c.state.init.roll = e.target.value === '' ? null : num(e.target.value); }) })),
@@ -477,7 +476,7 @@
     for (const k of ['Evasion', 'Clash']) if (DB.moves[k] && !keys.includes(k)) keys.push(k);
     const pain = R.pain(c, settings);
     const rows = keys.map((k) => moveRow(c, k, target, settings, pain)).filter(Boolean);
-    return h('div', { class: 'dblock moves' }, h('div', { class: 'row sp' }, h('h4', {}, '招式與骰池'), h('label', { class: 'small' }, '傷害目標：', sel)),
+    return h('div', { class: 'dblock mvblock' }, h('div', { class: 'row sp' }, h('h4', {}, '招式與骰池'), h('label', { class: 'small' }, '傷害目標：', sel)),
       pain ? h('p', { class: 'warn small' }, `疼痛懲罰：命中、傷害的成功數各 −${pain}（骰池不變，擲完再扣）。`) : null,
       rows.length ? rows : h('p', { class: 'muted small' }, '（沒有招式）'),
       h('p', { class: 'muted small' }, '骰池只是算給你看的建議，天氣、特性、道具、特殊效果請自己加減；🎲 是方便擲骰，結果也會寫進紀錄。'));
@@ -492,7 +491,7 @@
     const rollBtn = (label, n) => h('button', { class: 'mini dice', type: 'button', title: `擲 ${n} 顆骰`, onclick: () => rollFor(c, `${info.zh} ${label}`, n) }, '🎲');
     const last = (label) => UI.last[c.id + '|' + info.zh + ' ' + label];
     const line1 = h('div', { class: 'm1' },
-      h('label', { class: 'used', title: '本輪已使用（每個招式每輪只能用一次）' }, h('input', { type: 'checkbox', checked: used, onchange: (e) => commit(() => {
+      h('label', { class: 'usedlab', title: '本輪已使用（每個招式每輪只能用一次）' }, h('input', { type: 'checkbox', checked: used, onchange: (e) => commit(() => {
         const u = c.state.usedMoves; const i = u.indexOf(key);
         if (e.target.checked && i < 0) u.push(key); else if (!e.target.checked && i >= 0) u.splice(i, 1);
       }) }), '已用'),
@@ -811,9 +810,8 @@
     S.sides.forEach((sd, si) => {
       const mem = ord.filter((c) => c.side === sd.id);
       const eff = S.effects.filter((e) => e.scope === sd.id).map((e) => e.name + (e.rounds != null ? (e.rounds === 0 ? '（到期）' : `（剩 ${e.rounds} 輪）`) : ''));
-      const tg = S.field.targets[sd.id];
       if (!mem.length && !eff.length) return;
-      lines.push(`${ICON[si % ICON.length]} **${sd.name}**` + (tg != null ? `（目標數 ${tg}）` : '') + (eff.length ? `｜${eff.join('、')}` : ''));
+      lines.push(`${ICON[si % ICON.length]} **${sd.name}**` + (eff.length ? `｜${eff.join('、')}` : ''));
       mem.forEach((c) => {
         const mode = sd.hp, max = R.maxHp(c, S.settings), hp = Math.max(0, c.state.hp);
         const hpT = mode === 'hidden' ? '' : mode === 'exact' ? `HP ${hp}/${max}` : `HP ${'▓'.repeat(Math.round(hp / Math.max(1, max) * 10))}${'░'.repeat(10 - Math.round(hp / Math.max(1, max) * 10))}`;
@@ -934,7 +932,7 @@
             const to = S.sides.find((x) => x !== sd).id;
             mem.forEach((c) => { c.side = to; });
             S.effects.forEach((e) => { if (e.scope === sd.id) e.scope = to; });
-            S.sides = S.sides.filter((x) => x !== sd); delete S.field.targets[sd.id];
+            S.sides = S.sides.filter((x) => x !== sd);
           }, `刪除側：${sd.name}`); draw();
         } }, '刪除');
         return h('div', { class: 'srow' }, col, nm, h('label', { class: 'small' }, '玩家看板 HP：', hp), del);

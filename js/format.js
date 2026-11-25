@@ -32,7 +32,7 @@
     turn: { combatant: null, passStreak: 0 },
     settings: { defMode: 1, hpStat: 'vit', eorAuto: false },
     sides: F.defaultSides(),
-    field: { location: '', targets: {} },
+    field: { location: '' },
     effects: [], order: [], combatants: [], log: [],
   });
 
@@ -53,7 +53,6 @@
     s.settings = Object.assign({}, d.settings, s.settings || {});
     s.turn = Object.assign({}, d.turn, s.turn || {});
     s.field = Object.assign({}, d.field, s.field || {});
-    s.field.targets = s.field.targets || {};
     if (!Array.isArray(s.sides) || !s.sides.length) s.sides = F.defaultSides();
     // 戰場圖的三個區域（綠、紅、白）對應 s1、s2、s3，缺的補回去
     F.defaultSides().forEach((d0, i) => { if (!s.sides.some((x) => x.id === d0.id)) s.sides.splice(i, 0, d0); });

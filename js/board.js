@@ -89,9 +89,9 @@
   }
 
   // model：{ location, sides:[{id,name,color}], tokens:[{id,name,img,trainer,side,pos,hp:{pct,cur,max}|null,down,current,hidden,status:[kind…],attached:[{id,name,rounds}]}],
-  //         effects:[{id,kind,name,rounds,scope,pos,card}], targets:{sideId:n}, suggest:{kind:[名稱…]}, sprBase }
+  //         effects:[{id,kind,name,rounds,scope,pos,card}], suggest:{kind:[名稱…]}, sprBase }
   // opts（有 editable 才能操作）：onTokenMove(id, {side,pos})、onTokenClick(id)、onSlot(slot, patch)、onCardMove(id, {scope,pos})、
-  //   onCardClick(id)、onCardRounds(id, delta)、onCardRemove(id)、onTargets(sideId, value)
+  //   onCardClick(id)、onCardRounds(id, delta)、onCardRemove(id)
   B.render = (model, opts) => {
     opts = opts || {};
     const ed = !!opts.editable;
@@ -131,15 +131,6 @@
       }
       board.append(cell);
     }
-
-    // 目標數
-    const tg = h('div', { class: 'targets' }, h('small', {}, '目標數'));
-    for (const id of ['s1', 's2']) {
-      const v = model.targets ? model.targets[id] : null;
-      tg.append(ed ? h('input', { type: 'number', min: '0', value: v == null ? '' : v, style: { borderColor: col(id) }, 'aria-label': (side[id] ? side[id].name : id) + ' 目標數', onchange: (e) => opts.onTargets(id, e.target.value) })
-        : h('span', { class: 'tv', style: { borderColor: col(id) } }, v == null ? '—' : v));
-    }
-    board.append(tg);
 
     // 自由卡片（不在固定格子的條目）
     const cardIdx = {};

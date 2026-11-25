@@ -56,7 +56,7 @@
     });
     return {
       schema: 'pkr-view/1', title: S.title || '', round: S.round, location: S.field.location || '', turn: S.turn.combatant && visible.some((c) => c.id === S.turn.combatant) ? S.turn.combatant : null,
-      sides: S.sides.map((s) => ({ id: s.id, name: s.name, color: s.color })), targets: S.field.targets,
+      sides: S.sides.map((s) => ({ id: s.id, name: s.name, color: s.color })),
       effects: S.effects.filter((e) => (e.scope === 'field' || sideById[e.scope]) && pub(e)).map((e) => Object.assign(eff(e), { scope: e.scope })),
       order: list.map((o) => o.id), list,
     };

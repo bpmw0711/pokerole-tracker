@@ -63,7 +63,7 @@
     { "id": "s2", "name": "敵方",   "color": "#ef4444", "hp": "bar" },
     { "id": "s3", "name": "中立",   "color": "#9aa3b2", "hp": "bar" }
   ],
-  "field": { "location": "常磐森林外的草原", "targets": { "s1": 3, "s2": 4 } },
+  "field": { "location": "常磐森林外的草原" },
   "effects": [
     { "id": "e1", "kind": "weather",    "name": "下雨",     "scope": "field", "rounds": 2,    "note": "" },
     { "id": "e3", "kind": "forceField", "name": "光牆",     "scope": "s1",    "rounds": 2,    "note": "" },

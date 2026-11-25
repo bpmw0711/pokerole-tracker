@@ -13,8 +13,6 @@
 .board .zname.g { left: 14%; } .board .zname.r { right: 14%; }
 .board .wname { position: absolute; left: 1.5%; top: 2.5%; font-size: 12.5px; color: #8793a5; }
 .board .loc { position: absolute; right: 2%; bottom: 1.5%; font-size: 12.5px; color: #5a6d88; max-width: 30%; text-align: right; }
-.board .targets { position: absolute; left: 50%; top: 81%; transform: translateX(-50%); display: flex; align-items: center; gap: 6px; font-size: 12px; color: #fff; text-shadow: 0 1px 0 rgba(0,0,0,.35); z-index: 1; }
-.board .targets input, .board .targets .tv { width: 42px; height: 26px; text-align: center; border: 2px solid; border-radius: 6px; background: #fff; color: #1c2a44; padding: 0; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; }
 
 /* 固定格子 */
 .board .slot2 { position: absolute; z-index: 2; padding: 2px 5px 4px; background: rgba(255,255,255,.94); border: 2px dashed #9fb0c8; border-radius: 9px; display: flex; flex-direction: column; justify-content: center; gap: 1px; min-width: 0; }
