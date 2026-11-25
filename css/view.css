@@ -1,0 +1,11 @@
+/* 玩家看板（唯讀） */
+.orow.ro { grid-template-columns: 26px minmax(180px, 1.2fr) 170px minmax(120px, 1fr) 150px; }
+.ptrro { font-size: 18px; color: #b87d00; text-align: center; }
+.abox.ro { display: inline-flex; align-items: center; justify-content: center; border: 2px solid var(--edge); background: var(--panel); color: var(--ink); }
+.abox.ro.on { background: var(--primary2); color: #fff; border-color: #1c4690; }
+.vround { gap: 18px; font-size: 15px; } .vround .rd { font-size: 24px; }
+.hpn b { font-size: 15px; }
+@media (max-width: 900px) {
+  .orow.ro { grid-template-columns: 22px 1fr; }
+  .orow.ro > .hpc, .orow.ro > .stc, .orow.ro > .acts { grid-column: 1 / -1; }
+}
