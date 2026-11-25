@@ -24,7 +24,7 @@
   R.base = (c, k, settings) => {
     const a = c.character.attr || {};
     if (k === 'def') return a.vit || 0;
-    if (k === 'spdef') return settings.defMode === 2 ? a.ins || 0 : a.vit || 0;
+    if (k === 'spdef') return settings.defMode !== 1 ? a.ins || 0 : a.vit || 0; // 沒設定時當成選項 2
     return a[k] || 0;
   };
   // 現在的能力值：原值＋手動升降＋麻痺（靈巧 −2）＋大師級防禦加成
@@ -38,7 +38,7 @@
     const o = c.character.override && c.character.override.maxHp;
     if (o != null && o !== '') return +o;
     const a = c.character.attr || {};
-    const hpAttr = settings.defMode === 2 && settings.hpStat === 'ins' ? a.ins || 0 : a.vit || 0;
+    const hpAttr = settings.defMode !== 1 && settings.hpStat === 'ins' ? a.ins || 0 : a.vit || 0;
     const base = R.isTrainer(c) ? 4 : (R.dex(c) ? R.dex(c).hp || 0 : 0);
     return base + hpAttr + master(c);
   };

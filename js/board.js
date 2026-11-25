@@ -73,6 +73,9 @@
       if (e.button > 0 || e.target.closest('button,input,select,textarea,a')) return;
       e.preventDefault();
       const sx = e.clientX, sy = e.clientY, down = e;
+      // 抓住的地方不一定是中心：記下指標和棋子中心的差距，放下時用「棋子中心」算落點（看到哪裡就放在哪裡）
+      const r0 = el.getBoundingClientRect();
+      const offX = sx - (r0.left + r0.width / 2), offY = sy - (r0.top + r0.height / 2);
       let moved = false;
       try { el.setPointerCapture(e.pointerId); } catch (err) { /* 略 */ }
       const base = el.classList.contains('flow') ? '' : 'translate(-50%,-50%) ';
@@ -96,7 +99,7 @@
         finish();
         if (!moved) { if (onClick) onClick(down); return; }
         const r = board.getBoundingClientRect();
-        const px = (ev.clientX - r.left) / r.width * 100, py = (ev.clientY - r.top) / r.height * 100;
+        const px = (ev.clientX - offX - r.left) / r.width * 100, py = (ev.clientY - offY - r.top) / r.height * 100;
         const stack = document.elementsFromPoint(ev.clientX, ev.clientY);
         const strip = stack.find((n) => n.classList && n.classList.contains('strip'));
         const tok = stack.find((n) => n.classList && n.classList.contains('tok') && n.dataset.id && n.dataset.id !== selfId);
@@ -116,7 +119,8 @@
     return h('div', { class: 'tok' + (flow ? ' flow' : '') + (t.current ? ' cur' : '') + (t.sel ? ' sel' : '') + (t.down ? ' down' : '') + (t.hidden ? ' hid' : ''), 'data-id': t.id, title: t.name + (t.hp && t.hp.text ? `　HP ${t.hp.text}` : ''), style: { '--side': color } },
       t.current ? h('span', { class: 'tcur' }, '▼') : null,
       h('div', { class: 'ball' },
-        t.img != null ? h('img', { src: (model.sprBase || '') + t.img + '.png', alt: '', draggable: 'false', onerror: (e) => { e.target.style.visibility = 'hidden'; } }) : h('span', { class: 'ph' }, t.trainer ? '🧑' : '？'),
+        t.src ? h('img', { src: t.src, alt: '', class: t.photo ? 'photo' : 'av', draggable: 'false', onerror: (e) => { e.target.style.visibility = 'hidden'; } })
+          : t.img != null ? h('img', { src: (model.sprBase || '') + t.img + '.png', alt: '', draggable: 'false', onerror: (e) => { e.target.style.visibility = 'hidden'; } }) : h('span', { class: 'ph' }, t.trainer ? '🧑' : '？'),
         st.length ? h('span', { class: 'sbadge' }, st.map((k) => { const c = B.STATUS_COLOR[k] || B.STATUS_COLOR.custom; return h('i', { style: { background: c[0], color: c[1] } }, B.SHORT[k] || '＊'); })) : null,
         t.down ? h('span', { class: 'tdown' }, '倒下') : null),
       h('div', { class: 'tn' }, t.name),
@@ -125,7 +129,7 @@
       t.attached && t.attached.length ? h('div', { class: 'tatt' }, t.attached.map((a) => h('span', { class: 'achip' + (a.rounds === 0 ? ' expired' : ''), 'data-eid': a.id }, a.name + (a.rounds != null ? (a.rounds === 0 ? '·到期' : `·${a.rounds}`) : '')))) : null);
   };
 
-  // model：{ location, sides:[{id,name,color}], tokens:[{id,name,img,trainer,side,pos,hp:{pct,text?}|null,actions?,down,current,sel?,hidden,status:[kind…],attached:[{id,name,rounds}]}],
+  // model：{ location, sides:[{id,name,color}], tokens:[{id,name,img,src?（自訂圖示網址）,photo?（上傳的照片）,trainer,side,pos,hp:{pct,text?}|null,actions?,down,current,sel?,hidden,status:[kind…],attached:[{id,name,rounds}]}],
   //         effects:[{id,kind,name,rounds,scope,pos,card}], sprBase }
   // opts（有 editable 才能操作）：onTokenMove(id, {side,pos})、onTokenClick(id, part)、onTokenOnToken(fromId, toId)、onSlotPick(slot, anchorEl)、
   //   onSlotItemRounds(effectId, delta)、onSlotItemRemove(effectId)、onCardMove(id, {scope,pos})、onCardClick(id)、onCardRounds(id, delta)、onCardRemove(id)、onBoardDbl({x,y,zone})

@@ -387,3 +387,28 @@ code { font: 700 12.5px ui-monospace, Consolas, monospace; background: var(--pan
   .tk-mv { grid-template-columns: 24px minmax(0, 1fr) 56px 78px; }
   .tk-f2, .tk-f3 { grid-template-columns: 1fr; }
 }
+
+/* 圖示：上傳的照片裁成圓形、不用像素化；Showdown 的訓練家圖是像素圖 */
+.tk-spr.photo, .tk-avprev img.photo { image-rendering: auto; object-fit: cover; border-radius: 50%; }
+.tk-cimg { position: relative; padding: 0; border: 0; box-shadow: none; cursor: pointer; }
+.tk-cimg:hover:not(:disabled) { background: radial-gradient(circle at 50% 60%, #fff7d6 0 55%, #f5e3a0 56%); }
+.tk-cimg:active:not(:disabled) { transform: none; }
+.tk-cimg-ed { position: absolute; right: -2px; bottom: 0; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; background: var(--sun); border: 2px solid var(--frame); opacity: 0; transition: opacity .15s; }
+.tk-cimg:hover .tk-cimg-ed, .tk-cimg:focus-visible .tk-cimg-ed { opacity: 1; }
+.tk-avrow { display: flex; align-items: center; gap: 10px; color: var(--ink); }
+.tk-avprev { flex: none; width: 56px; height: 56px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 28px; background: radial-gradient(circle at 50% 60%, #eaf6f8 0 55%, #d1e9ee 56%); border: 2px solid var(--frame); overflow: hidden; }
+.tk-avprev img { width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated; }
+.tk-avprev.big { width: 96px; height: 96px; }
+.tk-avtop { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 10px; }
+.tk-avup { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; } .tk-avup small { color: var(--muted); }
+.tk-upbtn { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; font-weight: 700; color: #fff; background: var(--sea2); border: 2px solid var(--frame); border-radius: 7px; box-shadow: 0 3px 0 var(--frame); cursor: pointer; text-shadow: 1px 1px 0 #0d3346; }
+.tk-upbtn:hover { background: #3590ab; }
+.tk-upbtn:focus-within { outline: 3px solid var(--sun); outline-offset: 2px; }
+.tk-avfile { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.tk-avsearch { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+.tk-avgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 6px; max-height: 52vh; overflow: auto; padding: 4px; background: #fff; border: 2px solid var(--line); border-radius: 8px; }
+.tk-avtile { display: flex; flex-direction: column; align-items: center; gap: 0; padding: 4px 2px 3px; border: 2px solid transparent; border-radius: 7px; box-shadow: none; background: transparent; font-weight: 600; }
+.tk-avtile:hover:not(:disabled) { background: var(--gold2); border-color: var(--frame); }
+.tk-avtile.on { background: var(--sea3); border-color: var(--sea2); }
+.tk-avtile img { width: 72px; height: 72px; image-rendering: pixelated; object-fit: contain; }
+.tk-avtile small { max-width: 100%; font-size: 11px; line-height: 1.25; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

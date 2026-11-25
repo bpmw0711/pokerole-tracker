@@ -40,8 +40,12 @@
   const byId = (id) => S.combatants.find((c) => c.id === id);
   const cname = (c) => (c ? c.character.name || F.charName(DB, c.character) : '');
   const sideOf = (c) => S.sides.find((s) => s.id === c.side) || S.sides[0];
+  // 圖示：角色有自訂圖示（character.avatar，網址或上傳的圖）就用它，否則寶可夢用圖鑑小圖
+  const isPhoto = (src) => /^data:/.test(src || '');
   const sprite = (c, size) => {
     const x = R.dex(c), cls = 'tk-spr' + (size ? ' ' + size : '');
+    const av = c.character.avatar;
+    if (av) return h('img', { class: cls + (isPhoto(av) ? ' photo' : ''), src: av, alt: '', draggable: 'false', onerror: (e) => { e.target.style.visibility = 'hidden'; } });
     if (!x) return h('span', { class: cls + ' ph' }, R.isTrainer(c) ? '🧑' : '？');
     return h('img', { class: cls, src: SPR + x.img + '.png', alt: '', draggable: 'false', onerror: (e) => { e.target.style.visibility = 'hidden'; } });
   };
@@ -406,7 +410,7 @@
     const tokens = activeOrder().map((c) => {
       const x = R.dex(c);
       return {
-        id: c.id, name: cname(c), img: x ? x.img : null, trainer: R.isTrainer(c), side: c.side, pos: c.pos || null,
+        id: c.id, name: cname(c), img: x ? x.img : null, src: c.character.avatar || null, photo: isPhoto(c.character.avatar), trainer: R.isTrainer(c), side: c.side, pos: c.pos || null,
         hp: { pct: pct(c), text: `${Math.max(0, c.state.hp)}/${R.maxHp(c, S.settings)}` }, actions: c.state.actionCount,
         down: R.isDown(c), current: S.turn.combatant === c.id, sel: UI.sel === c.id, hidden: !!c.hidden,
         status: c.state.status.map((s) => s.kind), attached: effectsOf(c.id).map((e) => ({ id: e.id, name: e.name, rounds: e.rounds })),
@@ -502,7 +506,7 @@
     const sideSel = h('select', { class: 'tk-sidesel', 'aria-label': '陣營', title: '陣營（也可以直接拖棋子）', onchange: (e) => { const to = S.sides.find((x) => x.id === e.target.value); commit(() => { c.side = to.id; delete c.pos; }, `${cname(c)} 移到「${to.name}」`); } },
       S.sides.map((x) => h('option', { value: x.id, selected: x.id === c.side }, x.name)));
     const head = h('div', { class: 'tk-chead', style: { '--side': sd.color } },
-      h('div', { class: 'tk-cimg' }, sprite(c, 'lg')),
+      h('button', { class: 'tk-cimg', onclick: () => openAvatar(c), title: R.isTrainer(c) ? '換圖示（預設圖示或上傳圖片）' : '換圖示（不換就用圖鑑小圖）', 'aria-label': '換圖示' }, sprite(c, 'lg'), h('span', { class: 'tk-cimg-ed', 'aria-hidden': 'true' }, '✎')),
       h('div', { class: 'tk-cmeta' },
         h('h2', {}, cname(c), c.hidden ? h('span', { class: 'tk-tag' }, '隱藏中') : null),
         h('div', { class: 'tk-csub' }, R.types(c).map(typeChip), R.isTrainer(c) ? h('span', { class: 'tk-tag' }, '訓練家') : null, c.owner ? h('span', { class: 'tk-owner' }, '玩家：' + c.owner) : null),
@@ -1059,7 +1063,15 @@
     const sideSel = h('select', {}, S.sides.map((sd) => h('option', { value: sd.id, selected: sd.id === c.side }, sd.name)));
     const maxHp = h('input', { type: 'number', min: '0', value: old.override && old.override.maxHp != null ? old.override.maxHp : '', placeholder: `自動 ${R.maxHp(c, S.settings)}（4＋體魄）` });
     const grid = (title, keys, obj, zh) => h('div', { class: 'tg' }, h('h4', {}, title), h('div', { class: 'tgrid' }, keys.map((k) => h('label', {}, zh[k] || k, nm(obj, k)))));
+    // 圖示：在這個視窗裡改的是複本 t，按「完成」才套用
+    const avBox = h('div', { class: 'tk-avrow' });
+    const drawAv = () => avBox.replaceChildren(
+      h('span', { class: 'tk-avprev' }, t.avatar ? h('img', { src: t.avatar, alt: '', class: isPhoto(t.avatar) ? 'photo' : '' }) : h('span', {}, '🧑')),
+      h('button', { onclick: () => openAvatar(c, (src) => { if (src) t.avatar = src; else delete t.avatar; drawAv(); }, t.avatar) }, '選圖示／上傳圖片…'),
+      t.avatar ? h('button', { class: 'tk-link', onclick: () => { delete t.avatar; drawAv(); } }, '清除') : null);
+    drawAv();
     const body = h('div', { class: 'form' },
+      h('label', {}, '圖示', avBox),
       f('名稱', txt('name')), f('玩家', ownerIn), f('陣營（側）', sideSel), f('階級', rank), f('年齡', txt('age')), f('概念', txt('concept')), f('性格', txt('nature')), f('最大 HP 覆寫', maxHp),
       grid('能力值', ['str', 'dex', 'vit', 'ins'], t.attr, F.ATTR_ZH), grid('社交能力值', F.SOC, t.social, F.SOC_ZH),
       grid('技能', [...F.SK_TRAINER, 'throw'], t.skills, F.SK_ZH),
@@ -1072,6 +1084,74 @@
         m.close();
       } }, '完成'), h('button', { onclick: () => m.close() }, '取消')));
     const m = modal(`編輯訓練家：${cname(c)}`, body, { sticky: true, closeText: '取消' });
+  }
+
+  // ───────── 圖示（訓練家預設圖示或上傳圖片）─────────
+  // 上傳的圖片縮到最長邊 128px，存成 data URL 放在 character.avatar（之後角色卡會改成「JSON＋一張圖片」，見 docs/data-format.md）
+  function readImage(file) {
+    return new Promise((resolve, reject) => {
+      if (!file || !/^image\//.test(file.type)) return reject(new Error('請選擇圖片檔（PNG、JPG、GIF、WebP）'));
+      const url = URL.createObjectURL(file), img = new Image();
+      img.onload = () => {
+        const M = 128, k = Math.min(1, M / Math.max(img.naturalWidth, img.naturalHeight));
+        const w = Math.max(1, Math.round(img.naturalWidth * k)), hh = Math.max(1, Math.round(img.naturalHeight * k));
+        const cv = document.createElement('canvas'); cv.width = w; cv.height = hh;
+        const ctx = cv.getContext('2d'); ctx.imageSmoothingEnabled = k < 1; ctx.drawImage(img, 0, 0, w, hh);
+        URL.revokeObjectURL(url);
+        let d = cv.toDataURL('image/png');
+        if (d.length > 40000) d = cv.toDataURL('image/webp', 0.85);
+        if (d.length > 40000) d = cv.toDataURL('image/jpeg', 0.82);
+        resolve(d);
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('讀不到這張圖片')); };
+      img.src = url;
+    });
+  }
+  // onPick(src|null)：有給就交給呼叫者（例如編輯視窗裡的複本），沒給就直接改這位參戰者
+  function openAvatar(c, onPick, current) {
+    const T = window.PKTRAINERS || { base: '', featured: [], all: [] };
+    const cur = onPick ? current : c.character.avatar;
+    const urlOf = (id) => T.base + id + '.png';
+    const apply = (src, label) => {
+      if (onPick) onPick(src);
+      else commit(() => { if (src) c.character.avatar = src; else delete c.character.avatar; }, `${cname(c)} ${src ? '換圖示' + (label ? '：' + label : '') : '清除圖示'}`);
+      m.close();
+    };
+    const msg = h('div', { class: 'pkio-msg', role: 'status' });
+    const file = h('input', { type: 'file', accept: 'image/*', class: 'tk-avfile', onchange: async (e) => {
+      try { apply(await readImage(e.target.files[0]), '上傳的圖片'); } catch (err) { msg.className = 'pkio-msg bad'; msg.textContent = err.message; }
+    } });
+    const zh = Object.fromEntries(T.featured);
+    const tile = (id) => h('button', { class: 'tk-avtile' + (cur === urlOf(id) ? ' on' : ''), title: zh[id] ? `${zh[id]}（${id}）` : id, onclick: () => apply(urlOf(id), zh[id] || id) },
+      h('img', { src: urlOf(id), alt: '', loading: 'lazy', onerror: (e) => { e.target.closest('button').hidden = true; } }), h('small', {}, zh[id] || id));
+    const grid = h('div', { class: 'tk-avgrid' });
+    const q = h('input', { class: 'grow', type: 'search', placeholder: '搜尋（英文檔名或中文，例如 may、hiker、gen3、小遙）', 'aria-label': '搜尋圖示' });
+    let showAll = false;
+    const more = h('button', { onclick: () => { showAll = !showAll; draw(); } });
+    function draw() {
+      const t = q.value.trim().toLowerCase();
+      let ids;
+      if (t) ids = T.all.filter((id) => id.includes(t) || (zh[id] || '').includes(t)).slice(0, 240);
+      else ids = showAll ? T.all : T.featured.map(([id]) => id);
+      grid.replaceChildren(...ids.map(tile));
+      if (!ids.length) grid.append(h('p', { class: 'tk-note' }, '找不到。試試英文，例如 youngster、lass、grunt。'));
+      more.textContent = showAll ? '只看推薦' : `顯示全部 ${T.all.length} 個`;
+      more.hidden = !!t;
+    }
+    q.addEventListener('input', draw);
+    const body = h('div', { class: 'tk-av' },
+      h('div', { class: 'tk-avtop' },
+        h('span', { class: 'tk-avprev big' }, cur ? h('img', { src: cur, alt: '', class: isPhoto(cur) ? 'photo' : '' }) : sprite(c, 'lg')),
+        h('div', { class: 'tk-avup' },
+          h('label', { class: 'tk-upbtn' }, '⬆ 上傳自己的圖片', file),
+          h('small', {}, '會縮到 128×128 以內，存在角色資料裡（匯出角色 JSON 時一起帶走）。'),
+          cur ? h('button', { class: 'tk-link', onclick: () => apply(null) }, R.isTrainer(c) ? '清除圖示' : '清除，改回圖鑑小圖') : null),
+        msg),
+      h('div', { class: 'tk-avsearch' }, q, more),
+      grid,
+      h('p', { class: 'tk-note' }, '預設圖示來自 Pokémon Showdown 的訓練家圖（直接連到它的網站，需要網路）。'));
+    const m = modal(`選擇圖示：${cname(c)}`, body, { wide: true });
+    draw();
   }
 
   // ───────── 結束本輪 ─────────
@@ -1276,9 +1356,9 @@
         sideRows,
         h('div', { class: 'row' }, h('button', { onclick: () => { commit(() => { S.sides.push({ id: F.uid('s'), name: '新的一側', color: '#e3a33b', hp: 'bar' }); }, '新增一側'); draw(); } }, '＋ 新增一側')),
         h('h4', {}, '規則（影響最大 HP、防禦與特防的計算）'),
-        h('label', { class: 'rad' }, h('input', { type: 'radio', name: 'dm', checked: st.defMode !== 2, onchange: () => { commit(() => { st.defMode = 1; }, '雙防：選項 1'); draw(); } }), ' 選項 1：防禦與特防都等於體魄'),
-        h('label', { class: 'rad' }, h('input', { type: 'radio', name: 'dm', checked: st.defMode === 2, onchange: () => { commit(() => { st.defMode = 2; }, '雙防：選項 2'); draw(); } }), ' 選項 2：防禦＝體魄、特防＝洞察'),
-        st.defMode === 2 ? h('label', { class: 'rad' }, h('input', { type: 'checkbox', checked: st.hpStat === 'ins', onchange: (e) => { commit(() => { st.hpStat = e.target.checked ? 'ins' : 'vit'; }, '最大 HP 計算方式'); draw(); } }), ' 最大 HP 改用洞察計算') : null,
+        h('label', { class: 'rad' }, h('input', { type: 'radio', name: 'dm', checked: st.defMode === 1, onchange: () => { commit(() => { st.defMode = 1; }, '雙防：選項 1'); draw(); } }), ' 選項 1（桌遊體驗者）：防禦與特防都等於體魄'),
+        h('label', { class: 'rad' }, h('input', { type: 'radio', name: 'dm', checked: st.defMode !== 1, onchange: () => { commit(() => { st.defMode = 2; }, '雙防：選項 2'); draw(); } }), ' 選項 2（電子遊戲愛好者，預設）：防禦＝體魄、特防＝洞察'),
+        st.defMode !== 1 ? h('label', { class: 'rad' }, h('input', { type: 'checkbox', checked: st.hpStat === 'ins', onchange: (e) => { commit(() => { st.hpStat = e.target.checked ? 'ins' : 'vit'; }, '最大 HP 計算方式'); draw(); } }), ' 最大 HP 改用洞察計算') : null,
         h('p', { class: 'muted small' }, '個別參戰者的最大 HP 可以在「✎ 編輯」裡覆寫。'));
     }
     draw();

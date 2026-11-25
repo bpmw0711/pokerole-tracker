@@ -27,7 +27,8 @@ function statusText(st) {
 const stDot = (kind) => { const c = BD.STATUS_COLOR[kind] || BD.STATUS_COLOR.custom; return h('i', { class: 'tk-sd', style: { background: c[0], color: c[1] }, title: F.STATUS_ZH[kind] || kind }, BD.SHORT[kind] || '＊'); };
 const dots = (n) => Array.from({ length: 5 }, (_, k) => h('i', { class: k < n ? 'on' : '' }));
 const hpPct = (hp) => (hp.mode === 'exact' ? Math.min(100, Math.round(hp.cur / Math.max(1, hp.max) * 100)) : hp.pct);
-const sprite = (c, size) => (c.img != null
+const sprite = (c, size) => (c.src ? h('img', { class: 'tk-spr ' + size + (/^data:/.test(c.src) ? ' photo' : ''), src: c.src, alt: '' })
+  : c.img != null
   ? h('img', { class: 'tk-spr ' + size, src: SPR + c.img + '.png', alt: '', onerror: (e) => { e.target.style.visibility = 'hidden'; } })
   : h('span', { class: 'tk-spr ph ' + size }, c.trainer ? '🧑' : '？'));
 const effText = (e) => BD.effName(e) + (e.rounds != null ? (e.rounds === 0 ? '（到期）' : `（${e.rounds} 輪）`) : '');
@@ -39,7 +40,7 @@ function draw(v) {
     location: v.location, sides: v.sides, effects: v.effects, sprBase: SPR,
     tokens: v.list.map((c) => {
       const hp = c.hp || {}, pct = hpPct(hp);
-      return { id: c.id, name: c.name, img: c.img != null ? c.img : null, trainer: c.trainer, side: c.side, pos: c.pos || null,
+      return { id: c.id, name: c.name, img: c.img != null ? c.img : null, src: c.src || null, photo: /^data:/.test(c.src || ''), trainer: c.trainer, side: c.side, pos: c.pos || null,
         hp: hp.mode === 'hidden' || pct == null ? null : { pct, text: hp.mode === 'exact' ? `${hp.cur}/${hp.max}` : null }, actions: c.actionCount,
         down: c.down, current: v.turn === c.id, status: c.status.map((s) => s.kind), attached: c.effects.map((e) => ({ id: e.id, name: e.name, rounds: e.rounds })) };
     }),

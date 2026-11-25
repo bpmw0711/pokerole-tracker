@@ -32,7 +32,7 @@
   F.newSession = () => ({
     schema: F.SESSION, title: '', saved: null, round: 1,
     turn: { combatant: null, passStreak: 0 },
-    settings: { defMode: 1, hpStat: 'vit', eorAuto: false },
+    settings: { defMode: 2, hpStat: 'vit', eorAuto: false, defaultsV: 2 }, // 雙防預設選項 2（規則書的兩個選項之一；使用者指定優先用選項 2）
     sides: F.defaultSides(),
     field: { location: '' },
     effects: [], order: [], combatants: [], log: [],
@@ -52,7 +52,10 @@
   F.normalize = (s) => {
     const d = F.newSession();
     s = Object.assign({}, d, s);
+    const oldV = (s.settings && s.settings.defaultsV) || 1;
     s.settings = Object.assign({}, d.settings, s.settings || {});
+    // 舊存檔：當時的預設是選項 1（不是自己選的），統一改成選項 2；之後自己改的會保留
+    if (oldV < 2) { s.settings.defMode = 2; s.settings.defaultsV = 2; }
     s.turn = Object.assign({}, d.turn, s.turn || {});
     s.field = Object.assign({}, d.field, s.field || {});
     if (!Array.isArray(s.sides) || !s.sides.length) s.sides = F.defaultSides();

@@ -51,6 +51,7 @@
         hp: { mode },
       };
       const x = R.dex(c); if (x) o.img = x.img;
+      if (c.character.avatar) o.src = c.character.avatar; // 自訂圖示（網址或上傳的圖，上傳的已縮到 128px 以內）
       if (mode === 'exact') { o.hp.cur = cur; o.hp.max = max; } else if (mode === 'bar') o.hp.pct = Math.min(100, Math.round(cur / max * 100));
       return o;
     });

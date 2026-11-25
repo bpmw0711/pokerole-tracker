@@ -46,6 +46,8 @@
 - 寶可夢的 `skills` 是 12 項；訓練家另有 `throw`、`empathy`、`crafts`、`lore`、`medicine`、`science` 與 `extra: [{ "name": "", "value": 0 }]`。
 - 訓練家 `kind: "trainer"`：`name`、`player`（玩家名）、`age`、`money`、`concept`、`nature`、`achievements: []`、`bag: []`、`rank`、`attr`（無 `spe`）、`social`、`skills`、`note`。
 - `override`：GM 想硬改的（自訂最大 HP、特殊屬性）。
+- `avatar`（可省略）：自訂圖示。可以是網址（例如 Showdown 的訓練家圖 `https://play.pokemonshowdown.com/sprites/trainers/may-gen3.png`），或上傳的圖片（縮到最長邊 128px 的 `data:` 網址，放在 JSON 裡一起帶走）。沒有時：寶可夢用圖鑑小圖，訓練家用預設人像。
+  之後角色卡改成「JSON＋一張圖片」兩個檔案時，`avatar` 改放圖片檔名，讀進來再換成 `data:` 網址即可，其他欄位不變。
 - 衍生值（不存）：最大 HP＝基礎 HP＋體魄（大師級 +3）；意志＝洞察＋3；防禦＝體魄、特防＝洞察或體魄（設定決定）；命中與傷害骰池。
 
 ## 場次存檔 `pkr-session/1`
